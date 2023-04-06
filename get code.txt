@@ -1,0 +1,57 @@
+import base64
+import boto3
+
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    bucket_name = event ["pathParameters"]["bucket"]
+    file_name = event ["queryStringParameters"]["file"]
+    fileObj = s3.get_object(Bucket=bucket_name, Key=file_name)
+    file_content = fileObj["Body"].read()
+    # print
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/html",
+            "Content-Disposition": "attachment; filename={}".format(file_name)
+        },
+        "body": base64.b64encode(file_content),
+        "isBase64Encoded": True
+    }
+        # return {  
+        # 'headers': { "Content-type": "text/html" },
+
+
+
+
+
+
+
+
+
+
+
+
+
+ure, I can provide you with a high-level overview of the steps you need to follow to accomplish your goal.
+
+Here are the general steps to follow:
+
+Create an S3 bucket: Create an S3 bucket with a unique name, for example, testbuck. You can create the bucket either using the AWS Management Console or using the AWS CLI.
+
+Create an HTML form: Create an HTML form with the required input fields that you want to collect from your users. For example, if you want to collect the user's name and email address, you can create two input fields in your HTML form for the same.
+
+Deploy the HTML form to your S3 bucket: Upload your HTML form and any other necessary assets (e.g., CSS, JavaScript files) to your S3 bucket using the AWS Management Console or the AWS CLI. Once the files are uploaded, you can make them public by enabling the "Static website hosting" feature in your S3 bucket.
+
+Create an API Gateway: Create an API Gateway with a unique name, for example, testbuck1. You can create the API Gateway using the AWS Management Console or the AWS CLI.
+
+Create a Lambda function: Create a Lambda function with a unique name, for example, testbuck2, that will handle the data submission from the HTML form and store it in your S3 bucket. You can create the Lambda function using the AWS Management Console or the AWS CLI.
+
+Configure the API Gateway to integrate with the Lambda function: Configure the API Gateway to integrate with the Lambda function using the "Lambda Proxy Integration" method.
+
+Deploy the API Gateway: Deploy the API Gateway to make it available for use.
+
+Test the API Gateway using Postman: Use Postman to test the API Gateway by sending a POST request to the API Gateway URL with the necessary input data. You should receive a response from the API Gateway indicating that the data has been successfully stored in your S3 bucket.
+
+These are the general steps that you need to follow to accomplish your goal. However, the actual implementation details may vary depending on your specific use case and requirements.

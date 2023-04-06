@@ -1,0 +1,74 @@
+import boto3
+import json
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the submitted form data from the S3 bucket
+    bucket_name = 'examplebucket77658'
+    form_key = 'index.html'
+    form_data = s3.get_object(Bucket=bucket_name, Key=form_key)['Body'].read().decode('utf-8')
+    
+    # Process the form data (e.g., extract form fields, validate input, etc.)
+    print(event)
+    submitted_data = process_form_data(event)
+    print(submitted_data)
+    
+    # Check if folders already exist, if not create them
+    folder1 = 'sample1/'
+    folder2 = 'sample2/'
+    response = s3.list_buckets()
+    if bucket_name not in [bucket['Name'] for bucket in response ['Buckets']]:
+        s3.create_bucket(Bucket=bucket_name)
+        s3.put_object(Bucket=bucket_name, Key=folder1)
+        s3.put_object(Bucket=bucket_name, Key=folder2)
+    elif folder1 not in [obj['Key'] for obj in s3.list_objects(Bucket=bucket_name)['Contents']]:
+        s3.put_object(Bucket=bucket_name, Key=folder1)
+        s3.put_object(Bucket=bucket_name, Key=folder2)
+
+    # Get the current file number from S3 or set it to 0 if it doesn't exist
+    file_number_key = 'file_number.txt'
+    try:
+        file_number = int(s3.get_object(Bucket=bucket_name, Key=file_number_key)['Body'].read().decode('utf-8'))
+    except s3.exceptions.NoSuchKey:
+        file_number = 0
+    
+    # Put the processed data into a new S3 file with a sequential number in the file name
+    if file_number < 10:
+        result_key = f'{folder1}result_{file_number}.txt'
+    else:
+        result_key = f'{folder2}result_{file_number}.txt'
+    s3.put_object(Bucket=bucket_name, Key=result_key, Body=bytes(submitted_data, 'utf-8'))
+    
+    # Increment the file number counter and save it back to S3
+    file_number += 1
+    s3.put_object(Bucket=bucket_name, Key=file_number_key, Body=bytes(str(file_number), 'utf-8'))
+
+    # Return a response to the user (e.g., a success message)
+    response = {
+        'statusCode': 200,
+        'body': 'Form submitted successfully!'
+    }
+    return response
+
+def process_form_data(body):
+    # Parse the form data and extract the fields
+    # form_data = json.loads(body)
+    form_data=body
+    name = form_data['Name']
+    email = form_data['Email']
+    message = form_data['Message']
+
+    # Validate the input (e.g., ensure fields are not empty)
+    if not name or not email or not message:
+        raise ValueError('All form fields are required')
+
+    # Construct the processed data and return it
+    processed_data = {
+        'Name': name,
+        'Email': email,
+        'Message': message
+    }
+    print(processed_data)
+    return json.dumps(processed_data)
+

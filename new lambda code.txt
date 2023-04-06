@@ -1,0 +1,47 @@
+import boto3
+import json
+import time
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the submitted form data from the S3 bucket
+    bucket_name = 'examplebucket77658'
+    form_key = 'index.html'
+    form_data = s3.get_object(Bucket=bucket_name, Key=form_key)['Body'].read().decode('utf-8')
+
+    # Process the form data (e.g., extract form fields, validate input, etc.)
+    submitted_data = process_form_data(event)
+
+    # Generate a unique file name using the timestamp
+    timestamp = int(time.time())
+    result_key = 'Formdata_{}.txt'.format(timestamp)
+
+    # Put the processed data into the S3 bucket
+    s3.put_object(Bucket=bucket_name, Key=result_key, Body=bytes(submitted_data, 'utf-8'))
+
+    # Return a response to the user (e.g., a success message)
+    response = {
+        'statusCode': 200,
+        'body': 'Form submitted successfully!'
+    }
+    return response
+
+def process_form_data(body):
+    # Parse the form data and extract the fields
+    form_data = body
+    name = form_data['Name']
+    email = form_data['Email']
+    message = form_data['Message']
+
+    # Validate the input (e.g., ensure fields are not empty)
+    if not name or not email or not message:
+        raise ValueError('All form fields are required')
+
+    # Construct the processed data and return it
+    processed_data = {
+        'Name': name,
+        'Email': email,
+        'Message': message
+    }
+    return json.dumps(processed_data)

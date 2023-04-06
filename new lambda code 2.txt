@@ -1,0 +1,62 @@
+import boto3
+import json
+import math
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the submitted form data from the S3 bucket
+    bucket_name = 'examplebucket77658'
+    form_key = 'index.html'
+    form_data = s3.get_object(Bucket=bucket_name, Key=form_key)['Body'].read().decode('utf-8')
+
+    # Process the form data (e.g., extract form fields, validate input, etc.)
+    print(event)
+    submitted_data = process_form_data(event)
+    print(submitted_data)
+
+    # Create a new folder for the results if necessary
+    folder_name = get_folder_name(bucket_name)
+    folder_prefix = 'results/folder' + str(folder_name) + '/'
+    result_key = folder_prefix + 'result.txt'
+
+    # Put the processed data into the new file in the S3 bucket
+    s3.put_object(Bucket=bucket_name, Key=result_key, Body=bytes(submitted_data, 'utf-8'))
+
+    # Return a response to the user (e.g., a success message)
+    response = {
+        'statusCode': 200,
+        'body': 'Form submitted successfully!'
+    }
+    return response
+
+def process_form_data(body):
+    # Parse the form data and extract the fields
+    # form_data = json.loads(body)
+    form_data=body
+    name = form_data['Name']
+    email = form_data['Email']
+    message= form_data['Message']
+
+    # Validate the input (e.g., ensure fields are not empty)
+    if not name or not email or not message:
+        raise ValueError('All form fields are required')
+
+    # Construct the processed data and return it
+    processed_data = {
+        'Name': name,
+        'Email': email,
+        'Message': message
+    }
+    print(processed_data)
+    return json.dumps(processed_data)
+
+def get_folder_name(bucket_name):
+    # This will calculate the folder number based on the existing keys
+    prefix = 'results/'
+    try:
+        keys = s3.list_objects(Bucket=bucket_name, Prefix=prefix)['Contents']
+        folder_name = math.ceil((len(keys)+1)/100)
+    except KeyError:
+        folder_name = 1
+    return folder_name

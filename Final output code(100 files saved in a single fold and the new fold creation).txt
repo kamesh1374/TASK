@@ -1,0 +1,78 @@
+import boto3
+import json
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the submitted form data from the S3 bucket
+    bucket_name = 'taskbuck04042023'
+    form_key = 'index.html'
+    form_data = s3.get_object(Bucket=bucket_name, Key=form_key)['Body'].read().decode('utf-8')
+    
+    # Process the form data (e.g., extract form fields, validate input, etc.)
+    print(event)
+    submitted_data = process_form_data(event)
+    print(submitted_data)
+    
+    # Check if folders already exist, if not create them
+    folder_prefix = 'sample'
+    response = s3.list_buckets()
+    if bucket_name not in [bucket['Name'] for bucket in response ['Buckets']]:
+        s3.create_bucket(Bucket=bucket_name)
+    
+    # Get the current folder number and file number from S3 or set them to 1 and 0 respectively if they don't exist
+    folder_number_key = 'folder_number.txt'
+    try:
+        folder_number = int(s3.get_object(Bucket=bucket_name, Key=folder_number_key)['Body'].read().decode('utf-8'))
+    except s3.exceptions.NoSuchKey:
+        folder_number = 1
+    file_number_key = 'file_number.txt'
+    try:
+        file_number = int(s3.get_object(Bucket=bucket_name, Key=file_number_key)['Body'].read().decode('utf-8'))
+    except s3.exceptions.NoSuchKey:
+        file_number = 0
+    
+    # Create a new folder if the current folder is full (i.e., it has 10 files)
+    if file_number % 100 == 0:
+        current_folder = f"{folder_prefix}{folder_number}/"
+        s3.put_object(Bucket=bucket_name, Key=current_folder, Body='')
+        folder_number += 1
+        s3.put_object(Bucket=bucket_name, Key=folder_number_key, Body=bytes(str(folder_number), 'utf-8'))
+    else:
+        current_folder = f"{folder_prefix}{folder_number - 1}/"
+    
+    # Put the processed data into a new S3 file with a sequential number in the file name
+    result_key = f'{current_folder}result_{file_number}.txt'
+    s3.put_object(Bucket=bucket_name, Key=result_key, Body=bytes(submitted_data, 'utf-8'))
+    
+    # Increment the file number counter and save it back to S3
+    file_number += 1
+    s3.put_object(Bucket=bucket_name, Key=file_number_key, Body=bytes(str(file_number), 'utf-8'))
+
+    # Return a response to the user (e.g., a success message)
+    response = {
+        'statusCode': 200,
+        'body': 'Form submitted successfully!'
+    }
+    return response
+
+def process_form_data(body):
+    # Parse the form data and extract the fields
+    # form_data = json.loads(body)
+    form_data=body
+    name = form_data['Name']
+    email = form_data['Email']
+    message = form_data['Message']
+
+    # Validate the input (e.g., ensure fields are not empty)
+    if not name or not email or not message:
+        raise ValueError('All form fields are required')
+
+    # Construct the processed data and return it
+    processed_data = {
+        'Name': name,
+        'Email': email,
+        'Message': message
+    }
+    print(processed_data)
+    return json.dumps(processed_data)

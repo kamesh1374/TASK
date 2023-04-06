@@ -1,0 +1,71 @@
+import boto3
+import json
+import time
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the submitted form data from the S3 bucket
+    bucket_name = 'examplebucket77658'
+    form_key = 'index.html'
+    form_data = s3.get_object(Bucket=bucket_name, Key=form_key)['Body'].read().decode('utf-8')
+    
+    # Process the form data (e.g., extract form fields, validate input, etc.)
+    submitted_data = process_form_data(event)
+    
+    #check if the bucket exists and create folders if it doesnt 
+    response = s3.list_buckets()
+    if bucket_name not in [bucket['Name']for bucket in response ['Buckets']]:
+        folder1 = 'folder/'
+        folder2 = 'folder/'
+        s3.put_object(Bucket=bucket-name,key=folder1)
+        s3.put_object(Bucket=bucket-name,key=folder2)
+    
+    for i in range(10):
+        #generate the file name and contents
+        file_name = f'file_{i}.txt'
+        file_contents = f'This is file number {i}.'
+
+     # determine which folder to upload the file to
+        if i < 2:
+            folder = 'folder1/'
+        else:
+            folder = 'folder2/'
+        
+        # upload the file to the appropriate folder
+        s3.put_object(Bucket=bucket_name, Key=f'{folder}{file_name}', Body=file_contents)
+        
+         # Generate a unique file name using the timestamp
+    timestamp = int(time.time())
+    result_key = 'Formdata_{}.txt'.format(timestamp)
+    
+    # Put the processed data back into the same S3 bucket
+    s3.put_object(Bucket=bucket_name, Key=result_key, Body=bytes(submitted_data, 'utf-8'))
+
+    # Return a response to the user (e.g., a success message)
+    response = {
+        'statusCode': 200,
+        'body': 'Form submitted successfully!'
+    }
+    return response
+ 
+def process_form_data(body):
+    # Parse the form data and extract the fields
+    # form_data = json.loads(body)
+    form_data=body
+    name = form_data['Name']
+    email = form_data['Email']
+    message= form_data['Message']
+
+    # Validate the input (e.g., ensure fields are not empty)
+    if not name or not email or not message:
+        raise ValueError('All form fields are required')
+
+    # Construct the processed data and return it
+    processed_data = {
+        'Name': name,
+        'Email': email,
+        'Message': message
+    }
+    print(processed_data)
+    return json.dumps(processed_data)
