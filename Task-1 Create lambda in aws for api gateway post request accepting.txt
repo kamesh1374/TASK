@@ -1,0 +1,74 @@
+Go to the AWS Management Console and navigate to the Lambda service.
+Click on the "Create Function" button.
+Select "Author from scratch" as the option.
+Give your function a name, select the runtime environment as per your preference, and click on "Create Function".
+Once your function is created, scroll down to the "Function code" section and paste the code for your API Gateway POST request.
+Save your function.
+Here's a sample code that you can use for your API Gateway POST request:
+
+excute output only:
+-------------------
+import json
+
+def lambda_handler(event, context):
+    body = {
+        "message": "Hello, this is a POST request!"
+    }
+    
+    response = {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": json.dumps(body)
+    }
+    
+    return response
+This code will return a response with a 200 status code and a JSON object containing a message "Hello, this is a POST request!" in the response body.
+
+To integrate this Lambda function with API Gateway, follow these steps:
+
+Go to the API Gateway service in the AWS Management Console.
+Create a new API or select an existing one.
+Add a new POST method to your API.
+Select "Lambda Function" as the integration type and choose the Lambda function you just created.
+Save your changes and deploy your API.
+That's it! Your Lambda function is now integrated with API Gateway and can handle POST requests.
+
+
+
+
+import json statement imports the JSON module to help with formatting the response.
+
+def lambda_handler(event, context): defines the entry point for the AWS Lambda function.
+
+body = {"message": "Hello, this is a POST request!"} creates a dictionary object with a key-value pair where key is "message" and value is "Hello, this is a POST request!".
+
+response = { ... } creates a dictionary object with a key-value pairs to construct an HTTP response.
+
+"statusCode": 200 indicates that the HTTP response status code is 200, which means that the request has been successfully processed.
+
+"headers": {"Content-Type": "application/json"} sets the content type of the response to JSON.
+
+"body": json.dumps(body) converts the dictionary object body to a JSON string using the json.dumps() method.
+
+return response statement returns the response object as an HTTP response to the client that made the request.
+
+
+code for entering manaul Value:
+--------------------------------
+
+import json
+
+def lambda_handler(event, context):
+    
+    string=json.loads(event['body'])['string']
+    
+    message="Hello, this is a  {}".format(string)
+    
+    return message 
+    
+
+
+
+
